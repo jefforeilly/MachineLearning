@@ -1,11 +1,35 @@
-import multiprocessing
 import sys
 
 import numpy as np
-from sklearn.cluster import KMeans
+import pandas as pd
 
 import optimizers
-from max_ent import LassoRegularization, MaxEnt, TikhonovRegularization
+
+
+def softmax(x):
+    return np.exp(x) / np.sum(np.exp(x))
+
+
+class LassoRegularization:
+    def __init__(self, alpha):
+        self.alpha = alpha
+
+    def cost(self, theta):
+        return self.alpha * np.sum(np.abs(theta))
+
+    def gradient(self, theta):
+        return 2 * self.alpha * np.abs(theta) / theta
+
+
+class TikhonovRegularization:
+    def __init__(self, alpha):
+        self.alpha = alpha
+
+    def cost(self, theta):
+        return self.alpha * np.sum(theta**2)
+
+    def gradient(self, theta):
+        return 2 * self.alpha * theta
 
 
 class CostFunction:
@@ -46,21 +70,19 @@ class CostFunction:
             axis=2)
         gradient += np.array(
             [self.regularization.gradient(weight) for weight in weights])
-        return gradient
+
+        return (0., gradient)
 
 
-class RIM:
+class MaxEnt:
     def __init__(self,
-                 alpha: float,
-                 n_clusters: int = 8,
-                 n_init: int = 10,
-                 max_iter: int = 300,
-                 regularization='l2',
-                 optimizer='gradient_descent',
-                 n_jobs: int = None):
+                 *,
+                 regularization: str = 'l2',
+                 optimizer: str = 'adagrad',
+                 alpha: float = 0.1,
+                 max_iter: int = 200):
 
-        if n_jobs is None:
-            self.n_jobs = multiprocessing.cpu_count()
+        # PARSE REGULARIZATION CHOICE
         if regularization == 'l1':
             self.regularization = LassoRegularization(alpha)
         elif regularization == 'l2':
@@ -85,26 +107,37 @@ class RIM:
                 file=sys.stderr)
 
         self.alpha = alpha
-        self.n_jobs = n_jobs
-        self.kmeans = KMeans(
-            n_clusters,
-            n_init,
-            max_iter,
-            n_jobs=n_jobs,
-        )
-        self.max_ent = MaxEnt(max_iter=max_iter)
-        self.parameters = None
+        self.weights = None
+        self.max_iter = max_iter
 
-    def fit(self, X):
+    def fit(self, X, y):
         X = X.values if isinstance(X, pd.DataFrame) else X
+        y = y.values if isinstance(X, pd.DataFrame) else y
 
-        train = self.normalize(X)
-        self.kmeans.fit(train)
-        self.labels = self.kmeans.labels_
+        unique_values, _ = np.unique(y, return_counts=True)
 
-        self.max_ent.fit(X, self.labels)
-        parameters = self.max_ent.weights
-        self.parameters = np.c_[parameters, np.ones(parameters.shape[1])]
+        class_indices = np.array(
+            np.ma.make_mask([y == current for current in unique_values]))
 
-    def normalize(self, X):
-        return (X - np.mean(X, axis=1)) / np.std(X, axis=1, ddof=1)
+        class_datasets = np.array([X[indices] for indices in class_indices])
+        classes_metrics = np.array(
+            [dataset.sum(axis=0) for dataset in class_datasets]).reshape(
+                len(unique_values), -1)
+        self.weights = classes_metrics / \
+            classes_metrics.sum(axis=1)[:, np.newaxis]
+
+        optimizer_iterator = iter(
+            self.optimizer(
+                CostFunction(X, y, self.alpha, self.regularization),
+                self.weights,
+            ))
+
+        for _ in range(self.max_iter):
+            self.weights, _, _ = next(optimizer_iterator)
+
+    def predict_proba(self, X):
+        predictions = np.dot(self.weights, X.T)
+        return np.array([softmax(prediction) for prediction in predictions])
+
+    def predict(self, X):
+        return np.argmax(self.predict_proba(X), axis=0)
