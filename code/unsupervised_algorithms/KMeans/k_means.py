@@ -150,7 +150,7 @@ class KMeans:
                 # Assign each data point to cluster based on minimum distance
                 examples_clustered = np.argmin(distances_from_clusters, axis=0)
 
-                # Create mask with indices for each cluster, e.q. cluster one has
+                # Create mask with indices for each cluster, e.g. cluster one has
                 # mask [1,0,0,1,0] which means elements [0,4] will be chosen from
                 # the dataset for it.
 
