@@ -1,2 +1,3 @@
 ANCOVA (Covariance analysis)
 dropconnect (dropping weights)
+Dilated convolutions/kronecker factored convolutions (http://www.inference.vc/dilated-convolutions-and-kronecker-factorisation/)
