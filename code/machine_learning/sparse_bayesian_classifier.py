@@ -96,6 +96,7 @@ class LemmatizingCountVectorizer(CountVectorizer):
                              for word in analyzer(doc)])
 
 
+
 ###############################################################################
 #           FUNCTION TRANSFORMING LOGPOSTERIORS TO LOGITS
 ###############################################################################

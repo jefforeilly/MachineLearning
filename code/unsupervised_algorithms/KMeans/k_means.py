@@ -89,10 +89,10 @@ class KMeans:
         self.max_iterations = max_iterations
 
         self.tolerance = tolerance
-        if self.n_jobs = None:
+        if self.n_jobs is not None:
             self.n_jobs = n_jobs if n_jobs <= n_clusters else n_clusters
         else:
-            self.n_jobs - n_jobs
+            self.n_jobs = multiprocessing.cpu_count()
         self.labels = None
         self.cluster_centers = None
 

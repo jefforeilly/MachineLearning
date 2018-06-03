@@ -1,8 +1,16 @@
 import numpy as np
 
 __all__ = [
-    'gradient_descent', 'momentum', 'nesterov', 'adagrad', 'adadelta',
-    'rmsprop', 'rmsprop_nesterov', 'adam', 'adamax', 'nadam'
+    'gradient_descent',
+    'momentum',
+    'nesterov',
+    'adagrad',
+    'adadelta',
+    'rmsprop',
+    'rmsprop_nesterov',
+    'adam',
+    'adamax',
+    'nadam',
 ]
 
 

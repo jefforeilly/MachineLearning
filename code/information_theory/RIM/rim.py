@@ -3,7 +3,6 @@ import multiprocessing
 import numpy as np
 from sklearn.cluster import KMeans
 
-
 class RIM:
     def __init__(self,
                  alpha: float,
